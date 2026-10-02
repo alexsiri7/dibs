@@ -31,4 +31,6 @@ ruff check . && ruff format --check .
 pytest
 ```
 
-Configuration (e.g. the Companies House API key) comes from environment variables; never commit them.
+Configuration comes from environment variables; never commit them.
+
+- `COMPANIES_HOUSE_API_KEY` — a key for the free [Companies House public data API](https://developer.company-information.service.gov.uk/). Without it, every Companies House result is "check manually" with a link to search the register by hand.
