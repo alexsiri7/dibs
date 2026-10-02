@@ -8,7 +8,7 @@ For each name, Dibs looks at:
 - **Domains** — via RDAP, for configurable endings (default `.com`, `.co.uk`, `.ai`, `.io`).
 - **UK trademarks** — classes 9 and 42 (software), or a manual-check link where no reliable automated search exists.
 
-When a name is taken at Companies House, Dibs also tries suffix variants (default "Labs", "Studio"). Every name gets a verdict — clear, conflict, or check manually — with evidence and links.
+When a name is taken at Companies House, Dibs also tries suffix variants (default "Labs", "Studio") — not yet implemented (#7). Every name gets a verdict — clear, conflict, or check manually — with evidence and links.
 
 Dibs runs as an MCP server so Claude can check names during a brainstorm. See issue #1 for the spec.
 
