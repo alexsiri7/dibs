@@ -9,6 +9,7 @@ import pytest
 import respx
 
 from dibs import app, oauth
+from dibs.server import mcp
 
 SECRET = "s" * 48
 OWNER = "owner@example.com"
@@ -286,3 +287,63 @@ async def test_oauth_endpoints_report_missing_config(
 
     assert response.status_code == 503
     assert oauth.GOOGLE_CLIENT_ID in response.json()["error_description"]
+
+
+async def test_callback_reports_missing_allowed_email(
+    oauth_env: None,
+    client: httpx.AsyncClient,
+    respx_mock: respx.MockRouter,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    respx_mock.post(oauth.GOOGLE_TOKEN_URL).respond(json={"id_token": google_id_token(OWNER)})
+    monkeypatch.delenv(oauth.ALLOWED_EMAIL)
+
+    response = await sign_in(client)
+
+    assert response.status_code == 503
+    assert oauth.ALLOWED_EMAIL in response.json()["error_description"]
+
+
+async def test_refresh_reports_missing_allowed_email(
+    oauth_env: None, client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    refresh_token = oauth.create_refresh_token("g-123", OWNER)
+    monkeypatch.delenv(oauth.ALLOWED_EMAIL)
+
+    response = await client.post(
+        "/oauth/token", data={"grant_type": "refresh_token", "refresh_token": refresh_token}
+    )
+
+    assert response.status_code == 503
+    assert oauth.ALLOWED_EMAIL in response.json()["error_description"]
+
+
+async def test_mcp_answers_on_the_public_host(oauth_env: None) -> None:
+    token = oauth.create_access_token("g-123", OWNER)
+    initialize = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2025-06-18",
+            "capabilities": {},
+            "clientInfo": {"name": "test", "version": "0"},
+        },
+    }
+
+    transport = httpx.ASGITransport(app=app.build_app())
+    async with (
+        mcp.session_manager.run(),
+        httpx.AsyncClient(transport=transport, base_url=BASE) as c,
+    ):
+        response = await c.post(
+            "/mcp",
+            json=initialize,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json, text/event-stream",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["result"]["serverInfo"]["name"] == "dibs"

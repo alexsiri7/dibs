@@ -113,8 +113,7 @@ def _take(store: dict[str, dict[str, Any]], key: str) -> dict[str, Any] | None:
 
 
 def _email_allowed(email: str) -> bool:
-    allowed = os.environ.get(ALLOWED_EMAIL)
-    return bool(allowed) and email.casefold() == allowed.casefold()
+    return email.casefold() == _env(ALLOWED_EMAIL).casefold()
 
 
 def _create_token(sub: str, email: str, typ: str, ttl: int) -> str:
@@ -147,7 +146,10 @@ def _user_claims(token: str, typ: str) -> dict[str, Any] | None:
 
 
 def verify_access_token(token: str) -> dict[str, Any] | None:
-    return _user_claims(token, "access")
+    try:
+        return _user_claims(token, "access")
+    except NotConfiguredError:
+        return None
 
 
 def _pkce_s256(verifier: str) -> str:
