@@ -60,3 +60,11 @@ async def test_custom_endings_from_the_client(respx_mock: respx.MockRouter) -> N
     [report] = await call_check_names({"names": ["Dibs"], "endings": [".com", ".dev"]})
 
     assert [d["domain"] for d in report["domains"]] == ["dibs.com", "dibs.dev"]
+
+
+async def test_empty_endings_means_no_domain_checks(respx_mock: respx.MockRouter) -> None:
+    mock_rdap(respx_mock)
+
+    [report] = await call_check_names({"names": ["Dibs"], "endings": []})
+
+    assert report["domains"] == []
