@@ -27,6 +27,7 @@ dibs            # run the MCP server
 src/dibs/
   server.py   FastMCP instance and entry point (tools registered here)
   models.py   Name-report / verdict models
+  checks.py   Batch check pipeline with pluggable checks
 tests/        pytest suite
 ```
 
