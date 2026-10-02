@@ -71,6 +71,17 @@ def test_one_conflict_wins() -> None:
     assert report(companies_house=COMPANY_CONFLICT).verdict is Verdict.CONFLICT
 
 
+def test_trademark_conflict_wins() -> None:
+    trademark = CheckResult(
+        status=CheckStatus.CONFLICT,
+        evidence=Evidence(
+            found="Registered UK trademark DIBS in class 9",
+            link="https://trademarks.ipo.gov.uk/ipo-tmcase/page/Results/1/UK00001234567",
+        ),
+    )
+    assert report(trademark=trademark).verdict is Verdict.CONFLICT
+
+
 def test_conflict_beats_manual_check() -> None:
     r = report(
         companies_house=COMPANY_CONFLICT,
