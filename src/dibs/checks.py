@@ -22,6 +22,7 @@ DomainCheck = Callable[[str], Awaitable[list[DomainResult]]]
 TrademarkCheck = Callable[[str], Awaitable[CheckResult]]
 
 DEFAULT_DOMAIN_ENDINGS = (".com", ".co.uk", ".ai", ".io")
+DEFAULT_SUFFIXES = ("Labs", "Studio")
 IANA_RDAP_BOOTSTRAP = "https://data.iana.org/rdap/dns.json"
 IPO_TRADEMARK_SEARCH = "https://trademarks.ipo.gov.uk/ipo-tmtext"
 COMPANIES_HOUSE_API = "https://api.company-information.service.gov.uk"
@@ -193,8 +194,10 @@ async def check_names(
     company_check: CompanyCheck = companies_house_check,
     domain_check: DomainCheck = rdap_domain_check,
     trademark_check: TrademarkCheck = manual_trademark_check,
+    suffixes: Sequence[str] = DEFAULT_SUFFIXES,
 ) -> list[NameReport]:
-    """One report per name, in the order given."""
+    """One report per name, in the order given. A name taken at Companies House also gets a
+    report for each suffix variant; variants are not suffixed again."""
 
     async def check(name: str) -> NameReport:
         companies_house, domains, trademark = await asyncio.gather(
@@ -204,4 +207,11 @@ async def check_names(
             name=name, companies_house=companies_house, domains=domains, trademark=trademark
         )
 
-    return list(await asyncio.gather(*(check(name) for name in names)))
+    async def check_with_variants(name: str) -> NameReport:
+        report = await check(name)
+        if report.companies_house.status is CheckStatus.CONFLICT:
+            variants = await asyncio.gather(*(check(f"{name} {suffix}") for suffix in suffixes))
+            report.variants = list(variants)
+        return report
+
+    return list(await asyncio.gather(*(check_with_variants(name) for name in names)))

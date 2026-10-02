@@ -160,3 +160,48 @@ async def test_clear_name_registers_nothing() -> None:
 
     assert r.verdict is Verdict.CLEAR
     assert not respx.calls
+
+
+async def test_base_name_taken_reports_variants() -> None:
+    async def company_check(name: str) -> CheckResult:
+        return COMPANY_CONFLICT if name == "Interstellar AI" else CLEAR
+
+    [r] = await check_names(
+        ["Interstellar AI"],
+        company_check=company_check,
+        domain_check=fixed([]),
+        trademark_check=fixed(CLEAR),
+    )
+
+    assert r.verdict is Verdict.CONFLICT
+    assert [(v.name, v.verdict) for v in r.variants] == [
+        ("Interstellar AI Labs", Verdict.CLEAR),
+        ("Interstellar AI Studio", Verdict.CLEAR),
+    ]
+
+
+async def test_variants_are_not_suffixed_again() -> None:
+    [r] = await check_names(
+        ["Interstellar AI"],
+        company_check=fixed(COMPANY_CONFLICT),
+        domain_check=fixed([]),
+        trademark_check=fixed(CLEAR),
+    )
+
+    assert [v.verdict for v in r.variants] == [Verdict.CONFLICT, Verdict.CONFLICT]
+    assert all(v.variants == [] for v in r.variants)
+
+
+@pytest.mark.parametrize(
+    "companies_house",
+    [CLEAR, CheckResult(status=CheckStatus.POSSIBLE_CONFLICT, evidence=NEEDS_LOOK)],
+)
+async def test_base_name_free_reports_no_variants(companies_house: CheckResult) -> None:
+    [r] = await check_names(
+        ["Dibs"],
+        company_check=fixed(companies_house),
+        domain_check=fixed([]),
+        trademark_check=fixed(CLEAR),
+    )
+
+    assert r.variants == []

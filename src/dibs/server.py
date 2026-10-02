@@ -18,6 +18,9 @@ CHECK_NAMES_DESCRIPTION = (
     f"({', '.join(v.value for v in Verdict)}) and the evidence and links behind each result. "
     "`endings` are the domain endings to try, with the leading dot "
     f"(default {', '.join(checks.DEFAULT_DOMAIN_ENDINGS)}). "
+    "When a name is taken at Companies House, its report also lists `variants`: the name with "
+    f"each of `suffixes` appended (default {', '.join(checks.DEFAULT_SUFFIXES)}), each with its "
+    "own verdict. "
     "Read-only: never registers, buys or reserves anything."
 )
 
@@ -26,11 +29,16 @@ CHECK_NAMES_DESCRIPTION = (
     description=CHECK_NAMES_DESCRIPTION,
     annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
 )
-async def check_names(names: list[str], endings: list[str] | None = None) -> list[NameReport]:
-    if endings is None:
-        return await checks.check_names(names)
+async def check_names(
+    names: list[str], endings: list[str] | None = None, suffixes: list[str] | None = None
+) -> list[NameReport]:
+    domain_check = checks.rdap_domain_check
+    if endings is not None:
+        domain_check = functools.partial(checks.rdap_domain_check, endings=tuple(endings))
     return await checks.check_names(
-        names, domain_check=functools.partial(checks.rdap_domain_check, endings=tuple(endings))
+        names,
+        domain_check=domain_check,
+        suffixes=checks.DEFAULT_SUFFIXES if suffixes is None else tuple(suffixes),
     )
 
 
