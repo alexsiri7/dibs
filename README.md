@@ -18,7 +18,7 @@ Dibs only ever reads public registers. It never registers, buys, reserves or oth
 
 ## Status
 
-Scaffold only: the MCP server starts but exposes no tools yet. Checkers land in issues #2–#7.
+The MCP server exposes one tool, `check_names`: give it a list of candidate names and, optionally, the domain endings to try (with the leading dot, e.g. `.dev`). Suffix variants are not implemented yet (#7).
 
 ## Running locally
 
