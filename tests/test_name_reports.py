@@ -205,3 +205,22 @@ async def test_base_name_free_reports_no_variants(companies_house: CheckResult) 
     )
 
     assert r.variants == []
+
+
+async def test_trademark_only_conflict_reports_no_variants() -> None:
+    trademark_conflict = CheckResult(
+        status=CheckStatus.CONFLICT,
+        evidence=Evidence(
+            found="Registered UK trademark DIBS", link="https://trademarks.ipo.gov.uk/"
+        ),
+    )
+
+    [r] = await check_names(
+        ["Dibs"],
+        company_check=fixed(CLEAR),
+        domain_check=fixed([]),
+        trademark_check=fixed(trademark_conflict),
+    )
+
+    assert r.verdict is Verdict.CONFLICT
+    assert r.variants == []
