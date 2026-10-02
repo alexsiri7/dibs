@@ -2,7 +2,7 @@ import pytest
 import respx
 from pydantic import ValidationError
 
-from dibs.checks import check_names
+from dibs.checks import IANA_RDAP_BOOTSTRAP, check_names
 from dibs.models import (
     CheckResult,
     CheckStatus,
@@ -43,7 +43,8 @@ def fixed(result):
     return check
 
 
-async def test_three_candidates_reported_in_order() -> None:
+async def test_three_candidates_reported_in_order(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get(IANA_RDAP_BOOTSTRAP).respond(500)
     reports = await check_names(["Messier", "Onoma", "Dibs"])
 
     assert [r.name for r in reports] == ["Messier", "Onoma", "Dibs"]
@@ -53,7 +54,8 @@ async def test_three_candidates_reported_in_order() -> None:
         assert r.trademark
 
 
-async def test_unchecked_names_need_a_manual_check_with_links() -> None:
+async def test_unchecked_names_need_a_manual_check_with_links(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get(IANA_RDAP_BOOTSTRAP).respond(500)
     [r] = await check_names(["Blue Fern"])
 
     assert r.verdict is Verdict.CHECK_MANUALLY
