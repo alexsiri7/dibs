@@ -1,7 +1,9 @@
 """Runs the Companies House, domain and trademark checks for a batch of candidate names.
 
-Each check is pluggable. Until the real checkers land (#4-#6), the defaults never look
-anything up and answer "check manually" with a link to do the check by hand.
+Each check is pluggable. Until the real checkers land (#4, #5), the Companies House and
+domain defaults never look anything up and answer "check manually" with a link to do the
+check by hand. The trademark default is manual for good: the UK IPO register has no public
+API and its search blocks automated clients.
 """
 
 import asyncio
@@ -16,6 +18,7 @@ DomainCheck = Callable[[str], Awaitable[list[DomainResult]]]
 TrademarkCheck = Callable[[str], Awaitable[CheckResult]]
 
 DEFAULT_DOMAIN_ENDINGS = (".com", ".co.uk", ".ai", ".io")
+IPO_TRADEMARK_SEARCH = "https://trademarks.ipo.gov.uk/ipo-tmtext"
 
 
 def _not_checked(what: str, link: str) -> Evidence:
@@ -49,8 +52,12 @@ async def manual_domain_check(name: str) -> list[DomainResult]:
 async def manual_trademark_check(name: str) -> CheckResult:
     return CheckResult(
         status=CheckStatus.CHECK_MANUALLY,
-        evidence=_not_checked(
-            f"UK trademarks for {name!r}", "https://trademarks.ipo.gov.uk/ipo-tmtext"
+        evidence=Evidence(
+            found=(
+                "UK trademark register can't be searched automatically — "
+                f"search the UK IPO for {name!r} in classes 9 and 42"
+            ),
+            link=IPO_TRADEMARK_SEARCH,
         ),
     )
 
