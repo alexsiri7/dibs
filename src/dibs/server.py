@@ -3,12 +3,20 @@
 import functools
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 
 from dibs import checks
 from dibs.models import NameReport, Verdict
 
-mcp = FastMCP("dibs")
+mcp = FastMCP(
+    "dibs",
+    stateless_http=True,
+    json_response=True,
+    # Bearer auth gates /mcp (dibs.app); the SDK's localhost-only Host check would reject the
+    # public domain.
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+)
 
 
 CHECK_NAMES_DESCRIPTION = (
