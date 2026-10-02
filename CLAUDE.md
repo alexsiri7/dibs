@@ -19,6 +19,7 @@ pip install -e ".[dev]"
 ruff check . && ruff format --check .
 pytest
 dibs            # run the MCP server
+dibs-http       # run the MCP server over Streamable HTTP
 ```
 
 ## Project layout
@@ -28,6 +29,8 @@ src/dibs/
   server.py   FastMCP instance and entry point (tools registered here)
   models.py   Name-report / verdict models
   checks.py   Batch check pipeline with pluggable checks
+  app.py      HTTP app: /health and the bearer-token gate on /mcp
+  oauth.py    OAuth 2.1 endpoints with Google sign-in for one account
 tests/        pytest suite
 ```
 
