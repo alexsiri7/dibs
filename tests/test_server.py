@@ -1,8 +1,9 @@
+import pytest
 import respx
 from mcp.shared.memory import create_connected_server_and_client_session
 
 from dibs import server
-from dibs.checks import IANA_RDAP_BOOTSTRAP
+from dibs.checks import COMPANIES_HOUSE_API, COMPANIES_HOUSE_API_KEY, IANA_RDAP_BOOTSTRAP
 
 BOOTSTRAP = {
     "services": [
@@ -68,3 +69,37 @@ async def test_empty_endings_means_no_domain_checks(respx_mock: respx.MockRouter
     [report] = await call_check_names({"names": ["Dibs"], "endings": []})
 
     assert report["domains"] == []
+
+
+def mock_dibs_taken(respx_mock: respx.MockRouter, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(COMPANIES_HOUSE_API_KEY, "test-key")
+    mock_rdap(respx_mock)
+    taken = {"items": [{"title": "DIBS LTD", "company_number": "12345678"}]}
+    respx_mock.get(COMPANIES_HOUSE_API + "/search/companies", params={"q": "dibs"}).respond(
+        json=taken
+    )
+    respx_mock.get(COMPANIES_HOUSE_API + "/search/companies").respond(json={"items": []})
+
+
+async def test_custom_suffixes_from_the_client(
+    respx_mock: respx.MockRouter, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mock_dibs_taken(respx_mock, monkeypatch)
+
+    [report] = await call_check_names({"names": ["Dibs"], "endings": [], "suffixes": ["Ventures"]})
+
+    assert report["verdict"] == "conflict"
+    assert [v["name"] for v in report["variants"]] == ["Dibs Ventures"]
+    assert report["variants"][0]["companies_house"]["status"] == "clear"
+    assert report["variants"][0]["variants"] == []
+
+
+async def test_empty_suffixes_means_no_variants(
+    respx_mock: respx.MockRouter, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mock_dibs_taken(respx_mock, monkeypatch)
+
+    [report] = await call_check_names({"names": ["Dibs"], "endings": [], "suffixes": []})
+
+    assert report["verdict"] == "conflict"
+    assert report["variants"] == []

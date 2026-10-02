@@ -66,6 +66,7 @@ class NameReport(BaseModel):
     companies_house: CheckResult
     domains: list[DomainResult]
     trademark: CheckResult
+    variants: list["NameReport"] = []
 
     @computed_field
     @property
