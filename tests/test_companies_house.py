@@ -149,6 +149,16 @@ async def test_without_api_key_means_check_manually() -> None:
 
 
 @pytest.mark.usefixtures("api_key")
+async def test_nothing_left_after_normalisation(respx_mock: respx.MockRouter) -> None:
+    route = mock_search(respx_mock, company("BLUE FERN LTD"))
+
+    result = await companies_house_check("Ltd")
+
+    assert result.status is CheckStatus.CHECK_MANUALLY
+    assert not route.calls
+
+
+@pytest.mark.usefixtures("api_key")
 async def test_only_reads_with_key_as_username(respx_mock: respx.MockRouter) -> None:
     route = mock_search(respx_mock)
 
