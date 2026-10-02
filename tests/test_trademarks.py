@@ -1,6 +1,6 @@
 import respx
 
-from dibs.checks import IPO_TRADEMARK_SEARCH, check_names, manual_trademark_check
+from dibs.checks import check_names, manual_trademark_check
 from dibs.models import CheckResult, CheckStatus, DomainResult, DomainStatus, Verdict
 
 CLEAR = CheckResult(status=CheckStatus.CLEAR)
@@ -17,8 +17,7 @@ async def test_register_unavailable_means_check_manually() -> None:
     result = await manual_trademark_check("Dibs")
 
     assert result.status is CheckStatus.CHECK_MANUALLY
-    assert result.evidence.link == IPO_TRADEMARK_SEARCH
-    assert result.evidence.link.startswith("https://trademarks.ipo.gov.uk/")
+    assert result.evidence.link == "https://trademarks.ipo.gov.uk/ipo-tmtext"
     for detail in ("Dibs", "9", "42"):
         assert detail in result.evidence.found
 
