@@ -110,6 +110,15 @@ async def test_bootstrap_unavailable_means_check_manually(respx_mock: respx.Mock
     assert all(d.status is DomainStatus.CHECK_MANUALLY for d in results)
 
 
+async def test_bootstrap_malformed_means_check_manually(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get(IANA_RDAP_BOOTSTRAP).respond(200, json={"unexpected": "shape"})
+
+    results = await rdap_domain_check("Dibs")
+
+    assert len(results) == 4
+    assert all(d.status is DomainStatus.CHECK_MANUALLY for d in results)
+
+
 async def test_only_reads(respx_mock: respx.MockRouter) -> None:
     mock_bootstrap(respx_mock)
     respx_mock.get(url__regex=r"/domain/").respond(404)
